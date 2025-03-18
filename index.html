@@ -3,98 +3,112 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Latest compiled and minified CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
-
-    <!-- jQuery library -->
-    <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.slim.min.js"></script>
-
-    <!-- Popper JS -->
-    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
-
-    <!-- Latest compiled JavaScript -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
-
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
     <title>USERNAME FOR GITHUB</title>
 </head>
 <body>
-    <div class="container justify-content-center align-items-center">
-        <h2 class="display-2 ">LOOK FOR YOUR REPO</h2>
-    </div>
-
-    <div class="container">
-        <h3 id="text1"></h3>
-        <div class="input-group mb-3 d-grid justify-content-center align-items-center">
-            <input type="text" class="form-control form-control-sm" placeholder="Username...">
+    <div class="container text-center mt-4">
+        <h2 class="display-4">LOOK FOR YOUR REPO</h2>
+        <div class="input-group mb-3 w-50 mx-auto">
+            <input type="text" id="username" class="form-control" placeholder="Username...">
             <div class="input-group-append">
                 <button id="btn1" class="btn btn-primary" type="button">OK</button>
-                <button class="btn btn-danger" type="button">Cancel</button>
+                <button id="btnClear" class="btn btn-danger" type="button">Clear</button>
             </div>
         </div>
     </div>
-    <h3 id="textoPrueba"></h3>
+
+    <!-- Contenedor de la tabla -->
+    <div class="container">
+        <table id="repoTable" class="table table-striped mt-4">
+            <thead>
+                <tr>
+                    <th>Nombre Repositorio</th>
+                    <th>Descripción</th>
+                    <th>Estrellas ⭐</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Aquí se insertarán los datos de los repos -->
+            </tbody>
+        </table>
+    </div>
+
     <script>
+        // Cuando el documento esta cargado ejecuta init events
+        $(document).ready(initEvents);
 
-        
-        $(document).ready(click);
-
-        function click(){
+        // Dependiendo de lo que aprete el usuario se ejecutaran una funcion o la otra
+        function initEvents() {
             $("#btn1").click(lookForRepo);
+            $("#btnClear").click(clearTable);
         }
-        
-        function lookForRepo(){
 
-            // AQUI VA EL CODIGO PARA BUSCAR LOS REPOSITORIOS
-            let username = $("input").val();
-            let url = `https://api.github.com/users/${username}/repos`;
-            
-            let Repositorios = $.get(url, saveData);
-
-            function saveData(data, status){
-                let nombresRepos = data.map(repo => repo.name);
-                $("#textoPrueba").text(nombresRepos);
+        // Esta funcion busca los repositorios del usuario a partir de su nombre
+        function lookForRepo() {
+            let username = getUsername();
+            if (username === "") {
+                alert("Por favor, ingresa un nombre de usuario.");
+                return;
             }
-
-
-            var table = `
-                        <table class="table table-striped">
-                            <thead>
-                                <tr>
-                                    <th>Nombre Repositorio</th>
-                                    <th>Descripcion</th>
-                                    <th>Stargazers</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>DSA</td>
-                                    <td>Ejercicios de DSA</td>
-                                    <td>0</td>
-                                </tr>
-                                <tr>
-                                    <td>DSA</td>
-                                    <td>Ejercicios de DSA</td>
-                                    <td>0</td>
-                                </tr>
-                                <tr>
-                                    <td>DSA</td>
-                                    <td>Ejercicios de DSA</td>
-                                    <td>0</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                        `;
-
-            $("body").append(table);
-
-
+            fetchRepos(username);
         }
 
-        
+        function getUsername() {
+            return $("#username").val().trim();
+        }
 
+        // Getea los repositorios y si sale todo bien ejecuta la funcion SaveData
+        function fetchRepos(username) {
+            let url = `https://api.github.com/users/${username}/repos`;
+            $.get(url, saveData).fail(showError);
+        }
 
+        // Si no hay repositorios muestra un mensaje de error, y si hay repositorios ejecuta la funcion populateTable
+        function saveData(data) {
+            clearTable();
+            if (data.length === 0) {
+                showNoRepos();
+                return;
+            }
+            populateTable(data);
+        }
+
+        // Crea una tabla con los datos de los repositorios 
+        function populateTable(repos) {
+            // Consigue la "referencia" de la tabla
+            let tbody = $("#repoTable tbody");
+            // itera sobre cada repositorio con una funcion lambda, que son funciones que se ejecutan al instante sin llamarlas. 
+            // Cuando itera, llama a la funcion createRow, pasandole los datos del repositorio y esa misma funcion crea el codigo html y lo inserta en la tabla
+            repos.forEach(repo => {
+                let row = createRow(repo);
+                tbody.append(row);
+            });
+        }
+
+        function createRow(repo) {
+            return `
+                <tr>
+                    <td>${repo.name}</td>
+                    <td>${repo.description || "Sin descripción"}</td>
+                    <td>${repo.stargazers_count}</td>
+                </tr>
+            `;
+        }
+
+        function clearTable() {
+            $("#repoTable tbody").empty();
+            $("#username").val("");
+        }
+
+        function showNoRepos() {
+            $("#repoTable tbody").append("<tr><td colspan='3' class='text-center'>No se encontraron repositorios</td></tr>");
+        }
+
+        function showError() {
+            alert("No se encontraron datos. Verifica el nombre de usuario.");
+        }
     </script>
 
 </body>
